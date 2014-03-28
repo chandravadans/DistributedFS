@@ -1,13 +1,17 @@
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Client {
 
@@ -40,11 +44,11 @@ public class Client {
 
 			RegistryInterface remoteObj =
 					(RegistryInterface) Naming.lookup(registryServerURL);
-			
-			
+
+
 			//Get list of FileServers
 			ArrayList<String> servers=remoteObj.getFileServers();
-			
+
 			replicas=new ArrayList<String>();
 
 			//Decide master server (for write)
@@ -63,35 +67,124 @@ public class Client {
 					timestamp=this_ts;
 				}
 			}
-			
+
 			//Populate Replicas (for reads)
 			for(String s:servers){
 				String[]parts=s.split("#");
 				if(!parts[0].equalsIgnoreCase(masterServerIP))
 					replicas.add(s);
 			}
-			
-			
+
+
 
 			//Now we have the master server to which we send the writes.
 			String masterServerURL = "rmi://" + masterServerIP + ":" + masterServerPort + "/"+masterServerName;
 			ReadWriteInterface remoteWriteObj =
 					(ReadWriteInterface) Naming.lookup(masterServerURL);
-			
+
 			System.out.println("Sending file "+args[0]+ "to master server "+masterServerName);
 			xmit(remoteWriteObj, args[0]);
 			System.out.println("*** Done! ***");
 
-/*
-			System.out.println("Receiving file "+args[0]);
-			rcv(remoteObj, args[0]);
-			System.out.println("*** Done! ***");*/
+			System.out.println("\n\n\nAttempting to receive the file back...");
+			
+			//Now for the receiving part
+			//Calculate number of chunks
+			long numOfChunks = remoteWriteObj.NumFileChunks(args[0]);
+			System.out.println("Number of chunks = " + numOfChunks);
 
+			long numberOfReplicas=(long)replicas.size();
+			
+			System.out.println("Number of replicas = " + numberOfReplicas);
+			
+			int currentChunk=1;
+			
+			//If servers < chunks, each server will read multiple chunks serially
+			if(numberOfReplicas<numOfChunks){
 
+				int numPasses;
+				if(numOfChunks%numberOfReplicas==0)
+					numPasses=(int) (numOfChunks/numberOfReplicas);
+				else
+					numPasses=(int) (numOfChunks/numberOfReplicas+1);
+
+				for(int i=0;i<numPasses;i++){
+
+					ExecutorService executor = Executors.newFixedThreadPool((int)numberOfReplicas);
+					for(int t=0;t<numberOfReplicas;t++){
+
+						int serverNumber=(int) (currentChunk%numberOfReplicas);
+						
+						String serverAddress=replicas.get(serverNumber);
+						System.out.println("Reading chunk number  "+currentChunk+ " from replica: "+serverAddress.split("#")[0]);
+						String[]parts=serverAddress.split("#");
+						String ip=parts[1];
+						int port=Integer.parseInt(parts[2]);
+						String name=parts[0];
+						String uri="rmi://" + ip + ":" + port + "/"+name;
+						Runnable worker=new ClientThread(uri, args[0], currentChunk);
+						executor.execute(worker);
+						currentChunk++;
+					}
+					executor.shutdown();
+					while(!executor.isTerminated()){
+
+					}
+					System.out.println("Pass finished. Next chunk to read: "+currentChunk);
+				}
+			}
+			else{
+				//1 thread per chunk
+				ExecutorService executor = Executors.newFixedThreadPool((int)numOfChunks);
+				for(int i=0;i<numOfChunks;i++){
+					int serverNumber=i;
+					String serverAddress=replicas.get(serverNumber);
+					System.out.println("Reading chunk number  "+currentChunk+ " from replica: "+serverAddress.split("#")[0]);
+					String[]parts=serverAddress.split("#");
+					String ip=parts[1];
+					int port=Integer.parseInt(parts[2]);
+					String name=parts[0];
+					String uri="rmi://" + ip + ":" + port + "/"+name;
+					Runnable worker=new ClientThread(uri, args[0], currentChunk);
+					executor.execute(worker);
+					currentChunk++;
+				}
+				executor.shutdown();
+				while(!executor.isTerminated()){
+
+				}
+				System.out.println("Finished");
+			}
+			
+			//Reconstruct from parts
+			BufferedWriter bw=new BufferedWriter(new FileWriter(new File("output/"+args[0])));
+			
+			for(int i=1;i<currentChunk;i++){
+				BufferedReader br=new BufferedReader(new FileReader(new File("output/"+args[0]+"_chunks/"+i+".txt")));
+				int s;
+				bw.flush();
+				s=br.read();
+				while(s!=-1){
+					bw.write(s);
+					s=br.read();
+				}
+				br.close();
+				
+			}
+			bw.close();
+			
+			
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
+		
+		
+		
+		
+		
+		System.out.println("*****Done receiving the file.********");
 	}
 	private static void xmit(ReadWriteInterface stub, String filename) {
 
@@ -128,7 +221,7 @@ public class Client {
 
 	}
 
-
+/*
 	private static void rcv(ReadWriteInterface stub, String filename) {
 
 		try {
@@ -154,7 +247,7 @@ public class Client {
 			e.printStackTrace();
 		}
 
-	}
+	}*/
 
 	private static byte[] makeCopy(int size, byte[] b) {
 
