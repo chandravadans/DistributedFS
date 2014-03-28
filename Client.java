@@ -43,7 +43,7 @@ public class Client {
 			
 			
 			//Get list of FileServers
-			String[] servers=remoteObj.getFileServers();
+			ArrayList<String> servers=remoteObj.getFileServers();
 			
 			replicas=new ArrayList<String>();
 
@@ -53,18 +53,20 @@ public class Client {
 			String masterServerName = null;
 			Long timestamp=Long.MAX_VALUE;
 			for(String s:servers){
-				String[]parts=s.split("*");
-				Long this_ts=Long.parseLong(parts[2].split("_")[1]);
+				System.out.println("Received "+s);
+				String[]parts=s.split("#");
+				Long this_ts=Long.parseLong(parts[0].split("_")[1]);
 				if(this_ts<timestamp){
-					masterServerIP=parts[0];
-					masterServerPort=Integer.parseInt(parts[1]);
-					masterServerName=parts[2];
+					masterServerIP=parts[1];
+					masterServerPort=Integer.parseInt(parts[2]);
+					masterServerName=parts[0];
+					timestamp=this_ts;
 				}
 			}
 			
 			//Populate Replicas (for reads)
 			for(String s:servers){
-				String[]parts=s.split("*");
+				String[]parts=s.split("#");
 				if(!parts[0].equalsIgnoreCase(masterServerIP))
 					replicas.add(s);
 			}

@@ -1,6 +1,7 @@
 //package Registry;
 
 import java.rmi.Remote;
+import java.util.ArrayList;
 
 public interface RegistryInterface extends Remote{
 	
@@ -10,5 +11,5 @@ public interface RegistryInterface extends Remote{
 	
 	//Gets the rmi urls of all the servers registered with the RegistryServer.
 	// First entry is the master
-	String[] getFileServers();
+	ArrayList<String> getFileServers();
 }

@@ -75,7 +75,7 @@ public class FileServer {
 		name="Server_"+System.currentTimeMillis();
 
 		//Register with name*ip*port
-		if(remoteObj.RegisterServer(name+"*"+ip+"*"+port))
+		if(remoteObj.RegisterServer(name+"#"+ip+"#"+port))
 			isMaster=true;
 		else
 			isMaster=false;

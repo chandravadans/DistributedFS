@@ -1,7 +1,9 @@
 ////package FileServer;
 
+import java.lang.reflect.Array;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 
 public class RegistryImpl extends UnicastRemoteObject implements RegistryInterface {
 
@@ -35,8 +37,9 @@ public class RegistryImpl extends UnicastRemoteObject implements RegistryInterfa
 	}
 
 	@Override
-	public String[] getFileServers() throws RemoteException{
+	public ArrayList<String> getFileServers() throws RemoteException{
 
-		return (String[])RegistryServer.registry.toArray(); 
+		//System.out.println("In getFileServers, nunmber of servers is "+RegistryServer.registry.size());
+		return RegistryServer.registry; 
 	}
 }
