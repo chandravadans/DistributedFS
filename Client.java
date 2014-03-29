@@ -48,9 +48,13 @@ public class Client {
 
 			//Get list of FileServers
 			ArrayList<String> servers=remoteObj.getFileServers();
+			
+			if(servers.size()<1){
+				System.out.println("FATAL! No servers registered with the registry server. Exiting..");
+				System.exit(1);
+			}
 
 			replicas=new ArrayList<String>();
-
 			//Decide master server (for write)
 			String masterServerIP=null;
 			Integer masterServerPort=null;
@@ -73,6 +77,11 @@ public class Client {
 				String[]parts=s.split("#");
 				if(!parts[0].equalsIgnoreCase(masterServerName))
 					replicas.add(s);
+			}
+			
+			if(replicas.size()<1){
+				System.out.println("No replica servers found, treating master server as a replica");
+				replicas.add(servers.get(0));
 			}
 
 			//Now we have the master server to which we send the writes.
