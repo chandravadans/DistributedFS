@@ -71,7 +71,7 @@ public class Client {
 			//Populate Replicas (for reads)
 			for(String s:servers){
 				String[]parts=s.split("#");
-				if(!parts[0].equalsIgnoreCase(masterServerIP))
+				if(!parts[0].equalsIgnoreCase(masterServerName))
 					replicas.add(s);
 			}
 
@@ -114,6 +114,10 @@ public class Client {
 					for(int t=0;t<numberOfReplicas;t++){
 
 						int serverNumber=(int) (currentChunk%numberOfReplicas);
+						
+						//If all chunks are received, break and exit
+						if(currentChunk>numOfChunks)
+							break;
 						
 						String serverAddress=replicas.get(serverNumber);
 						System.out.println("Reading chunk number  "+currentChunk+ " from replica: "+serverAddress.split("#")[0]);
@@ -173,6 +177,7 @@ public class Client {
 			}
 			bw.close();
 			
+			//TODO delete the temporary folder
 			
 			
 		} catch (Exception e) {
