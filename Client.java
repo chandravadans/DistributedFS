@@ -40,7 +40,7 @@ public class Client {
 
 			String registryServerURL = "rmi://" + args[1] + ":" + args[2] + "/RegistryServer";
 
-			System.out.println("I will try to invoke the remote method from  " + registryServerURL);
+			System.out.println("Invoking the remote method from  " + registryServerURL);
 
 			RegistryInterface remoteObj =
 					(RegistryInterface) Naming.lookup(registryServerURL);
@@ -75,8 +75,6 @@ public class Client {
 					replicas.add(s);
 			}
 
-
-
 			//Now we have the master server to which we send the writes.
 			String masterServerURL = "rmi://" + masterServerIP + ":" + masterServerPort + "/"+masterServerName;
 			ReadWriteInterface remoteWriteObj =
@@ -99,7 +97,7 @@ public class Client {
 			
 			int currentChunk=1;
 			
-			//If servers < chunks, each server will read multiple chunks serially
+			//If servers < chunks, each server will read multiple chunks in a round robin fashion
 			if(numberOfReplicas<numOfChunks){
 
 				int numPasses;
@@ -134,7 +132,7 @@ public class Client {
 					while(!executor.isTerminated()){
 
 					}
-					System.out.println("Pass finished. Next chunk to read: "+currentChunk);
+					//System.out.println("Pass finished. Next chunk to read: "+currentChunk);
 				}
 			}
 			else{
@@ -183,12 +181,6 @@ public class Client {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		
-		
-		
-		
-		
 		System.out.println("*****Done receiving the file.********");
 	}
 	private static void xmit(ReadWriteInterface stub, String filename) {
@@ -225,35 +217,6 @@ public class Client {
 		}
 
 	}
-
-/*
-	private static void rcv(ReadWriteInterface stub, String filename) {
-
-		try {
-			long numOfChunks = stub.NumFileChunks(filename);
-			System.out.println("Number of chunks = " + numOfChunks);
-			new File("output").mkdir();
-
-			if(numOfChunks==0)
-				return;
-
-			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File("output/" + filename)));
-
-			for(int i=1; i<=numOfChunks; i++) {
-				byte b[] =stub.FileRead64K(filename, i);
-				System.out.println("Number of Bytes: " + b.length  + "  " + i);
-				bos.write(b);
-			}
-
-			bos.flush();	
-			bos.close();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}*/
-
 	private static byte[] makeCopy(int size, byte[] b) {
 
 		byte data[] = new byte[size];

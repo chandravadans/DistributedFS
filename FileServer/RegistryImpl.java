@@ -9,12 +9,8 @@ public class RegistryImpl extends UnicastRemoteObject implements RegistryInterfa
 
 	protected RegistryImpl() throws RemoteException {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Override
@@ -39,7 +35,6 @@ public class RegistryImpl extends UnicastRemoteObject implements RegistryInterfa
 	@Override
 	public ArrayList<String> getFileServers() throws RemoteException{
 
-		//System.out.println("In getFileServers, nunmber of servers is "+RegistryServer.registry.size());
 		return RegistryServer.registry; 
 	}
 }

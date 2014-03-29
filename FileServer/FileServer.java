@@ -21,7 +21,7 @@ public class FileServer {
 
 	public static void main(String args[]) {
 
-		
+
 		//Arguments: <FileServerIP> <FileServerPort>
 		if(System.getSecurityManager()==null){
 
@@ -29,13 +29,14 @@ public class FileServer {
 		}
 
 		try {
-			
+
 			BufferedReader in=new BufferedReader(new FileReader(new File("config.txt")));
 			registryIP=in.readLine();
 			registryPort=Integer.parseInt(in.readLine());
 			in.close();
 
 			System.out.println("Registry server located at "+registryIP+":"+registryPort);
+			
 			//Register with Registry Server
 			registerWithRegistryServer(args[0],args[1]);
 
@@ -53,7 +54,7 @@ public class FileServer {
 	static void registerWithRegistryServer(String ip, String port) throws RemoteException, MalformedURLException, NotBoundException{
 
 		//The IP and port refer to the FileServer's IP and port. Registry Server's IP and port are stored
-		// in Config.java
+		// in the local file
 		Registry registry = LocateRegistry.getRegistry(registryIP,registryPort);
 
 		if(registry==null){
@@ -67,18 +68,17 @@ public class FileServer {
 
 		String registryServerURL = "rmi://" + registryIP + ":" + registryPort + "/RegistryServer";
 
-		System.out.println("I will try to invoke RegistryServer from  " + registryServerURL);
+		System.out.println("Invoking RegistryServer from  " + registryServerURL);
 
 		RegistryInterface remoteObj =
 				(RegistryInterface) Naming.lookup(registryServerURL);
 
 		name="Server_"+System.currentTimeMillis();
 
-		//Register with name*ip*port
+		//Register with name#ip#port
 		if(remoteObj.RegisterServer(name+"#"+ip+"#"+port))
 			isMaster=true;
 		else
 			isMaster=false;
-		//Actually, you can split and choose the one with least name as the master.Problem solved! :P
 	}
 }
